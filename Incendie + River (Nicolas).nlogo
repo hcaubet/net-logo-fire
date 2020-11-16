@@ -1,27 +1,27 @@
 globals [
-  arbres-initiaux   ;; how many trees (green patches) we started with
-  arbres-brules    ;; how many have burned so far
+  arbres-initiaux    ;; avec combien d'arbres nous commençons (arbres verts)
+  arbres-brules    ;; combien d'arbres ont brulés
 ]
-breed [arbres arbre]
-breed [feux feu]    ;; bright red turtles -- the leading edge of the fire
-breed [cendres cendre]
+;;définition des tortues
+breed [arbres arbre];; tortues vertes: les arbres sains
+breed [feux feu]    ;; tortues rouges: le feu qui se répend
+breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
 breed [humains humain]
-breed [waters water]
+breed [waters water] ;; torutes bleues: l'eau
 
 to setup
   clear-all
    set-default-shape turtles "tree"
-  set-default-shape cendres "tree"
    set-default-shape humains "person"
-  init-river
+   init-river
    ask patches with [(random-float 100) < densité]
-    [ set pcolor green - 3.5
-  boiser]
+    [ if pcolor != blue ;;on nemet pas d'arbre lorsqu'il y a de l'eau
+      [set pcolor green - 3.5
+      boiser]] ;;ajoute les tortues arbres
 
-  ask patches with [pxcor = min-pxcor]
+   ask patches with [pxcor = min-pxcor]
     [ enflammer ]
- ;;set arbres-initiaux count patches with [pcolor = green - 3.5]
-  set arbres-brules 0
+  set arbres-brules 0 ;; on initialise arbres-brules à 0, arbres-initiaux est initialisé dans la procédure boiser
   reset-ticks  ;;on met l'horloge à 0
 end
 
@@ -34,6 +34,9 @@ to go
   tick
 end
 
+;;j'ai observé que lorsqu'une rivière couppe l'écran en deux, un arbre se met à bruler pour aucune raison
+;; à droite en bas et cela propage le feu de l'autre côté de la rivière alors que ça ne devrait pas...
+;; mais ça le fait pas à chaque fois
 
 to init-river
   ask n-of 1 patches
@@ -82,8 +85,9 @@ end
 
 to boiser
   sprout-arbres 1
-  ask neighbors4 with [pcolor = black]
-    [set pcolor black ]
+   [set color green]
+;  ask neighbors4 with [pcolor = black]
+;    [set pcolor black ]
   set arbres-initiaux arbres-initiaux + 1
 end
 
@@ -171,7 +175,7 @@ densité
 densité
 0
 100
-41.0
+75.0
 1
 1
 NIL
@@ -186,7 +190,7 @@ river-radius
 river-radius
 0
 10
-6.0
+3.0
 1
 1
 NIL
