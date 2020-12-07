@@ -19,8 +19,14 @@ to setup
       [set pcolor green - 3.5
       boiser]] ;;ajoute les tortues arbres
 
-   ask patches with [pxcor = min-pxcor]
-    [ enflammer ]
+  ask patches with [pxcor = min-pxcor and pycor = max-pycor]
+        [ enflammer ]
+  ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor - 1)]
+        [ enflammer ]
+   ask patches with [(pxcor = min-pxcor) and (pycor = max-pycor - 1)]
+        [ enflammer ]
+   ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor)]
+        [ enflammer ]
   set arbres-brules 0 ;; on initialise arbres-brules à 0, arbres-initiaux est initialisé dans la procédure boiser
   reset-ticks  ;;on met l'horloge à 0
 end
@@ -28,6 +34,8 @@ end
 to go
  ask feux
   [ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
+    [enflammer]
+   ask patches in-radius vent with [ pcolor = green - 3.5]
     [enflammer]
   set breed cendres]
   attenuer-cendres
@@ -88,7 +96,7 @@ to boiser
    [set color green]
 ;  ask neighbors4 with [pcolor = black]
 ;    [set pcolor black ]
-  set arbres-initiaux arbres-initiaux + 1
+  set arbres-initiaux 0
 end
 
 to enflammer  ;; patch procedure
@@ -175,37 +183,52 @@ densité
 densité
 0
 100
-75.0
+50.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-43
-310
-215
-343
+11
+298
+183
+331
 river-radius
 river-radius
 0
 10
-3.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-39
-251
-211
-284
+11
+260
+183
+293
 water-density
 water-density
 0
 100
 100.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+382
+203
+415
+Vent
+Vent
+0
+10
+2.0
 1
 1
 NIL
