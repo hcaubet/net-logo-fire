@@ -103,13 +103,11 @@ to boiser
 end
 
 to enflammer  ;; patch procedure
-  if random 100 > humidity
-  [
-    sprout-feux 1
+  if
+  sprout-feux 1
     [ set color red ]
-    set pcolor black
-    set arbres-brules arbres-brules + 1
-  ]
+  set pcolor black
+  set arbres-brules arbres-brules + 1
 end
 
 to attenuer-cendres
@@ -249,7 +247,7 @@ humidity
 humidity
 0
 100
-66.0
+49.0
 1
 1
 %
