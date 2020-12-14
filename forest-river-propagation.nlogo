@@ -9,16 +9,16 @@ breed [feux feu]    ;; tortues rouges: le feu qui se répend
 breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
 breed [humains humain]
 breed [waters water] ;; torutes bleues: l'eau
-
+breed [fire-cuts fire-cut]
 to setup
   clear-all
-   set-default-shape turtles "tree"
-   set-default-shape humains "person"
+  set-default-shape turtles "tree"
+  set-default-shape humains "person"
 
-   init-river
-
+  init-river
+  init-fire-cuts
   ask patches with [(random-float 100) < density]
-    [ if pcolor != blue ;;on nemet pas d'arbre lorsqu'il y a de l'eau
+    [ if pcolor != blue and pcolor != brown;;on nemet pas d'arbre lorsqu'il y a de l'eau
       [set pcolor green - 3.5
       boiser]] ;;ajoute les tortues arbres
 
@@ -31,6 +31,7 @@ to setup
    ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor)]
         [ enflammer ]
   set arbres-brules 0 ;; on initialise arbres-brules à 0, arbres-initiaux est initialisé dans la procédure boiser
+
   reset-ticks  ;;on met l'horloge à 0
 end
 
@@ -43,6 +44,62 @@ to go
   set breed cendres]
   attenuer-cendres
   tick
+end
+
+to init-fire-cuts
+
+  if hauteur-parcelles != 0
+  [
+    ask patches with [ pxcor mod hauteur-parcelles = 0 and pycor = min-pycor]
+    [
+      sprout-fire-cuts 1 [set pcolor brown ]
+    ]
+
+    let i 0
+
+    while [i < world-height]
+    [
+      ask fire-cuts
+      [
+        ask patches in-radius (largeur-coupe-feu / 2)
+        [
+          set pcolor brown
+        ]
+        facexy xcor (ycor + 1)
+        fd 1
+      ]
+      set i i + 1
+    ]
+    ask fire-cuts
+    [
+      die
+    ]
+  ]
+  if largeur-parcelles != 0
+  [
+    ask patches with [ pycor mod largeur-parcelles = 0 and pxcor = min-pxcor]
+    [
+      sprout-fire-cuts 1 [set pcolor brown]
+    ]
+    let i 0
+    while [i < world-height]
+    [
+      ask fire-cuts
+      [
+        ask patches in-radius (largeur-coupe-feu / 2)
+        [
+          set pcolor brown
+        ]
+        facexy xcor + 1 ycor
+        fd 1
+      ]
+      set i i + 1
+    ]
+    ask fire-cuts
+    [
+      die
+    ]
+  ]
 end
 
 ;;j'ai observé que lorsqu'une rivière coupe l'écran en deux, un arbre se met à bruler pour aucune raison
@@ -122,11 +179,11 @@ end
 GRAPHICS-WINDOW
 210
 10
-881
-682
+1420
+1221
 -1
 -1
-13.0
+2.0
 1
 10
 1
@@ -136,12 +193,12 @@ GRAPHICS-WINDOW
 0
 0
 1
--25
-25
--25
-25
-0
-0
+-300
+300
+-300
+300
+1
+1
 1
 ticks
 30.0
@@ -189,7 +246,7 @@ density
 density
 0
 100
-49.0
+40.0
 1
 1
 NIL
@@ -219,7 +276,7 @@ water-density
 water-density
 0
 100
-100.0
+96.0
 1
 1
 NIL
@@ -253,6 +310,51 @@ humidity
 1
 1
 %
+HORIZONTAL
+
+SLIDER
+21
+410
+206
+443
+hauteur-parcelles
+hauteur-parcelles
+20
+100
+73.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+25
+459
+204
+492
+largeur-parcelles
+largeur-parcelles
+20
+100
+78.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+506
+217
+539
+largeur-coupe-feu
+largeur-coupe-feu
+0
+20
+4.0
+2
+1
+NIL
 HORIZONTAL
 
 @#$#@#$#@
