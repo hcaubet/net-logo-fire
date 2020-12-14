@@ -30,6 +30,7 @@ to setup
         [ enflammer ]
    ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor)]
         [ enflammer ]
+  set arbres-initiaux count patches with [pcolor = green - 3.5] + 1
   set arbres-brules 0 ;; on initialise arbres-brules à 0, arbres-initiaux est initialisé dans la procédure boiser
 
   reset-ticks  ;;on met l'horloge à 0
@@ -156,7 +157,7 @@ to boiser
    [set color green]
 ;  ask neighbors4 with [pcolor = black]
 ;    [set pcolor black ]
-  set arbres-initiaux 0
+  ;set arbres-initiaux 0 ; plus besoin de ça car j'initialise les arbres initiaux dans le setup
 end
 
 to enflammer  ;; patch procedure
@@ -291,7 +292,7 @@ wind
 wind
 0
 10
-2.0
+10.0
 1
 1
 NIL
@@ -356,6 +357,17 @@ largeur-coupe-feu
 1
 NIL
 HORIZONTAL
+
+MONITOR
+47
+352
+145
+397
+percent burned
+(arbres-brules / arbres-initiaux)\n* 100
+1
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
