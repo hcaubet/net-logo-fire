@@ -28,13 +28,13 @@ to setup
   let i 0
   while [i < foyer-de-feu]
   [
-     ask patches with [pxcor = min-pxcor + (random max-pxcor) and pycor = min-pycor +  (random max-pycor) ]
+     ask one-of patches with [pcolor = green - 3.5]
      [
-        if pcolor = green - 3.5
-          [
+
+
             enflammer
             set i i + 1
-          ]
+
      ]
   ]
 
@@ -386,7 +386,7 @@ foyer-de-feu
 foyer-de-feu
 0
 20
-1.0
+2.0
 1
 1
 NIL
@@ -448,7 +448,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "if coupes-feux [plot count patches with [pcolor = brown] * prix-arbre]"
+"default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "if coupes-feux [plot count patches with [pcolor = brown] * densité / 100 * prix-arbre]"
 
 PLOT
 859

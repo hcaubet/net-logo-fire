@@ -4,7 +4,6 @@ globals [
 ]
 
 ;;définition des tortues
-breed [arbres arbre];; tortues vertes: les arbres sains
 breed [feux feu]    ;; tortues rouges: le feu qui se répend
 breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
 breed [eaux eau] ;; tortues bleues: l'eau
@@ -15,17 +14,28 @@ to setup
   set-default-shape turtles "tree"
 
   initialise-rivieres
-  initialise-coupe-feux
+  if coupes-feux
+  [
+    initialise-coupe-feux
+  ]
   ask patches with [(random-float 100) < densité]
     [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau
       [set pcolor green - 3.5
-      boiser]] ;;ajoute les tortues arbres
+      ]
+  ]
 
   ; création des foyers
-  repeat foyer-de-feu
+  let i 0
+  while [i < foyer-de-feu]
   [
-      ask patches with [pxcor = min-pxcor + (random max-pxcor) and pycor = min-pycor +  (random max-pycor) ]
-        [ enflammer ]
+     ask one-of patches with [pcolor = green - 3.5]
+     [
+
+
+            enflammer
+            set i i + 1
+
+     ]
   ]
 
   set arbres-initiaux count patches with [pcolor = green - 3.5] + 1
@@ -40,8 +50,9 @@ to go
     [enflammer]
    ask patches in-radius intensité-vent with [ pcolor = green - 3.5]
     [enflammer]
-  set breed cendres]
-  attenuer-cendres
+  set pcolor gray
+  die]
+
   tick
 end
 
@@ -146,10 +157,6 @@ to initialise-rivieres
 end
 
 
-to boiser
-  sprout-arbres 1
-   [set color green]
-end
 
 to enflammer
   if random 100 > humidité
@@ -160,19 +167,12 @@ to enflammer
     set arbres-brules arbres-brules + 1
   ]
 end
-
-to attenuer-cendres
-  ask cendres
-  [set color red - 3.5
-  set pcolor black]
-
-end
 @#$#@#$#@
 GRAPHICS-WINDOW
 0
 0
-410
-411
+1210
+1211
 -1
 -1
 2.0
@@ -185,10 +185,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--100
-100
--100
-100
+-300
+300
+-300
+300
 0
 0
 1
@@ -240,7 +240,7 @@ densité
 densité
 0
 100
-100.0
+70.0
 1
 1
 %
@@ -255,25 +255,10 @@ largeur-rivières
 largeur-rivières
 0
 10
-7.0
+3.0
 1
 1
 m
-HORIZONTAL
-
-SLIDER
-225
-103
-397
-136
-densité-rivières
-densité-rivières
-0
-100
-100.0
-1
-1
-%
 HORIZONTAL
 
 SLIDER
@@ -285,7 +270,7 @@ intensité-vent
 intensité-vent
 0
 10
-10.0
+2.0
 1
 1
 NIL
@@ -314,8 +299,8 @@ SLIDER
 hauteur-parcelles
 hauteur-parcelles
 20
-100
-86.0
+150
+101.0
 1
 1
 NIL
@@ -329,8 +314,8 @@ SLIDER
 largeur-parcelles
 largeur-parcelles
 20
-100
-48.0
+150
+74.0
 1
 1
 NIL
@@ -345,7 +330,7 @@ largeur-coupe-feu
 largeur-coupe-feu
 0
 20
-10.0
+0.0
 2
 1
 NIL
@@ -401,7 +386,7 @@ foyer-de-feu
 foyer-de-feu
 0
 20
-10.0
+2.0
 1
 1
 NIL
@@ -417,6 +402,104 @@ Pourcentage sauvé
 1
 1
 11
+
+PLOT
+298
+469
+704
+659
+Taux d'accupation du terrain par les arbres
+NIL
+%
+0.0
+10.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot (count patches with [pcolor = green - 3.5] / count patches) * 100"
+
+SWITCH
+136
+222
+280
+255
+coupes-feux
+coupes-feux
+0
+1
+-1000
+
+PLOT
+298
+667
+849
+817
+Pertes (en euros) induite par les coupes-feux
+NIL
+euros
+0.0
+10.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "if coupes-feux [plot count patches with [pcolor = brown] * densité / 100 * prix-arbre]"
+
+PLOT
+859
+666
+1320
+816
+Pertes (en euros) induite par le feu
+NIL
+NIL
+0.0
+10.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "plot count patches with [pcolor = gray] * prix-arbre"
+
+SLIDER
+28
+607
+200
+640
+prix-arbre
+prix-arbre
+1
+100
+2.0
+1
+1
+euros
+HORIZONTAL
+
+PLOT
+300
+859
+1040
+1009
+Valeur totale de la parcelle (en euros)
+NIL
+euros
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "plot count patches with [pcolor = green - 3.5] * prix-arbre"
 
 @#$#@#$#@
 ## WHAT IS IT?
