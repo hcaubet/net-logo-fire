@@ -18,25 +18,10 @@ to setup
   [
     initialise-coupe-feux
   ]
-  ask patches with [(random-float 100) < densité]
-    [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau
-      [set pcolor green - 3.5
-      ]
-  ]
 
-  ; création des foyers
-  let i 0
-  while [i < foyer-de-feu]
-  [
-     ask one-of patches with [pcolor = green - 3.5]
-     [
+  initialise-arbres
 
-
-            enflammer
-            set i i + 1
-
-     ]
-  ]
+  initialise-feux
 
   set arbres-initiaux count patches with [pcolor = green - 3.5] + 1
   set arbres-brules 0 ;; on initialise arbres-brules à 0
@@ -54,6 +39,27 @@ to go
   die]
 
   tick
+end
+
+to initialise-arbres
+  ask patches with [(random-float 100) < densité]
+    [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau
+      [set pcolor green - 3.5
+      ]
+  ]
+end
+
+to initialise-feux
+  let i 0
+  while [i < foyer-de-feu]
+  [
+     ask one-of patches with [pcolor = green - 3.5]
+     [
+            sprout-feux 1
+            [ set color red ]
+            set i i + 1
+     ]
+  ]
 end
 
 to initialise-coupe-feux
