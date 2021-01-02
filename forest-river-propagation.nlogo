@@ -7,31 +7,29 @@ globals [
 breed [arbres arbre];; tortues vertes: les arbres sains
 breed [feux feu]    ;; tortues rouges: le feu qui se répend
 breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
-breed [humains humain]
-breed [waters water] ;; torutes bleues: l'eau
-breed [fire-cuts fire-cut]
+breed [eaux eau] ;; tortues bleues: l'eau
+breed [coupe-feux coupe-feu]
+
 to setup
   clear-all
   set-default-shape turtles "tree"
-  set-default-shape humains "person"
 
-  init-river
-  init-fire-cuts
-  ask patches with [(random-float 100) < density]
-    [ if pcolor != blue and pcolor != brown;;on nemet pas d'arbre lorsqu'il y a de l'eau
+  initialise-rivieres
+  initialise-coupe-feux
+  ask patches with [(random-float 100) < densité]
+    [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau
       [set pcolor green - 3.5
       boiser]] ;;ajoute les tortues arbres
 
-  ask patches with [pxcor = min-pxcor and pycor = max-pycor]
+  ; création des foyers
+  repeat foyer-de-feu
+  [
+      ask patches with [pxcor = min-pxcor + (random max-pxcor) and pycor = min-pycor +  (random max-pycor) ]
         [ enflammer ]
-  ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor - 1)]
-        [ enflammer ]
-   ask patches with [(pxcor = min-pxcor) and (pycor = max-pycor - 1)]
-        [ enflammer ]
-   ask patches with [(pxcor = min-pxcor + 1) and (pycor = max-pycor)]
-        [ enflammer ]
+  ]
+
   set arbres-initiaux count patches with [pcolor = green - 3.5] + 1
-  set arbres-brules 0 ;; on initialise arbres-brules à 0, arbres-initiaux est initialisé dans la procédure boiser
+  set arbres-brules 0 ;; on initialise arbres-brules à 0
 
   reset-ticks  ;;on met l'horloge à 0
 end
@@ -40,27 +38,27 @@ to go
  ask feux
   [ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
     [enflammer]
-   ask patches in-radius wind with [ pcolor = green - 3.5]
+   ask patches in-radius intensité-vent with [ pcolor = green - 3.5]
     [enflammer]
   set breed cendres]
   attenuer-cendres
   tick
 end
 
-to init-fire-cuts
+to initialise-coupe-feux
 
   if hauteur-parcelles != 0
   [
     ask patches with [ pxcor mod hauteur-parcelles = 0 and pycor = min-pycor]
     [
-      sprout-fire-cuts 1 [set pcolor brown ]
+      sprout-coupe-feux 1 [set pcolor brown ]
     ]
 
     let i 0
 
     while [i < world-height]
     [
-      ask fire-cuts
+      ask coupe-feux
       [
         ask patches in-radius (largeur-coupe-feu / 2)
         [
@@ -71,7 +69,7 @@ to init-fire-cuts
       ]
       set i i + 1
     ]
-    ask fire-cuts
+    ask coupe-feux
     [
       die
     ]
@@ -80,12 +78,12 @@ to init-fire-cuts
   [
     ask patches with [ pycor mod largeur-parcelles = 0 and pxcor = min-pxcor]
     [
-      sprout-fire-cuts 1 [set pcolor brown]
+      sprout-coupe-feux 1 [set pcolor brown]
     ]
     let i 0
     while [i < world-height]
     [
-      ask fire-cuts
+      ask coupe-feux
       [
         ask patches in-radius (largeur-coupe-feu / 2)
         [
@@ -96,25 +94,21 @@ to init-fire-cuts
       ]
       set i i + 1
     ]
-    ask fire-cuts
+    ask coupe-feux
     [
       die
     ]
   ]
 end
 
-;;j'ai observé que lorsqu'une rivière coupe l'écran en deux, un arbre se met à bruler pour aucune raison
-;; à droite en bas et cela propage le feu de l'autre côté de la rivière alors que ça ne devrait pas...
-;; mais ça le fait pas à chaque fois
-
-to init-river
+to initialise-rivieres
   ask n-of 1 patches
-    [ sprout-waters 1 [set pcolor blue]]
+    [ sprout-eaux 1 [set pcolor blue]]
 
   let i 0
   while [ i < (max-pycor)]
     [
-      ask waters
+      ask eaux
       [
         ifelse not can-move? 1 [die]
       [
@@ -139,7 +133,7 @@ to init-river
           set pcolor blue
           fd 1
         ]
-        let radius random river-radius
+        let radius random largeur-rivières
         set radius radius + 1
         ask patches in-radius radius
         [
@@ -155,13 +149,10 @@ end
 to boiser
   sprout-arbres 1
    [set color green]
-;  ask neighbors4 with [pcolor = black]
-;    [set pcolor black ]
-  ;set arbres-initiaux 0 ; plus besoin de ça car j'initialise les arbres initiaux dans le setup
 end
 
-to enflammer  ;; patch procedure
-  if random 100 > humidity
+to enflammer
+  if random 100 > humidité
   [
     sprout-feux 1
     [ set color red ]
@@ -178,10 +169,10 @@ to attenuer-cendres
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-1420
-1221
+0
+0
+410
+411
 -1
 -1
 2.0
@@ -191,13 +182,15 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
 1
--300
-300
--300
-300
+1
+1
+-100
+100
+-100
+100
+0
+0
 1
 1
 1
@@ -205,10 +198,10 @@ ticks
 30.0
 
 BUTTON
-20
-301
-89
-334
+30
+492
+99
+525
 setup
 setup
 NIL
@@ -222,10 +215,10 @@ NIL
 1
 
 BUTTON
-111
-300
-174
-333
+121
+491
+184
+524
 go
 go
 T
@@ -239,57 +232,57 @@ NIL
 0
 
 SLIDER
-18
-14
-190
-47
-density
-density
+23
+150
+195
+183
+densité
+densité
 0
 100
-40.0
+100.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
-15
-120
-187
-153
-river-radius
-river-radius
+226
+51
+398
+84
+largeur-rivières
+largeur-rivières
 0
 10
-2.0
+7.0
 1
 1
-NIL
+m
 HORIZONTAL
 
 SLIDER
-17
-66
-189
-99
-water-density
-water-density
+225
+103
+397
+136
+densité-rivières
+densité-rivières
 0
 100
-96.0
+100.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
-16
-177
-188
-210
-wind
-wind
+22
+99
+194
+132
+intensité-vent
+intensité-vent
 0
 10
 10.0
@@ -299,30 +292,30 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-238
-187
-271
-humidity
-humidity
+23
+50
+195
+83
+humidité
+humidité
 0
 100
-66.0
+63.0
 1
 1
 %
 HORIZONTAL
 
 SLIDER
-21
-410
+25
+268
 206
-443
+301
 hauteur-parcelles
 hauteur-parcelles
 20
 100
-73.0
+86.0
 1
 1
 NIL
@@ -330,41 +323,97 @@ HORIZONTAL
 
 SLIDER
 25
-459
+318
 204
-492
+351
 largeur-parcelles
 largeur-parcelles
 20
 100
-78.0
+48.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-31
-506
-217
-539
+25
+375
+203
+408
 largeur-coupe-feu
 largeur-coupe-feu
 0
 20
-4.0
+10.0
 2
 1
 NIL
 HORIZONTAL
 
 MONITOR
-47
-352
-145
-397
-percent burned
+29
+543
+143
+588
+Pourcentage brulé
 (arbres-brules / arbres-initiaux)\n* 100
+1
+1
+11
+
+TEXTBOX
+24
+11
+174
+36
+Environnement 
+20
+0.0
+1
+
+TEXTBOX
+28
+227
+178
+252
+Parcelles\n
+20
+0.0
+1
+
+TEXTBOX
+30
+449
+180
+474
+Simulation
+20
+0.0
+1
+
+SLIDER
+225
+152
+397
+185
+foyer-de-feu
+foyer-de-feu
+0
+20
+10.0
+1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+157
+544
+277
+589
+Pourcentage sauvé
+100 - (arbres-brules / arbres-initiaux)\n* 100
 1
 1
 11
@@ -711,7 +760,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.1.1
+NetLogo 3D 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
