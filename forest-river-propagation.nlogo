@@ -1,6 +1,12 @@
 globals [
   arbres-initiaux    ;; avec combien d'arbres nous commençons (arbres verts)
   arbres-brules    ;; combien d'arbres ont brulés
+   positionx
+  positiony
+  tombe
+  aleatoire
+  longueur
+
 ]
 
 ;;définition des tortues
@@ -31,10 +37,12 @@ end
 
 to go
  ask feux
-  [ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
+   [set positionx pxcor
+    set positiony pycor
+    ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
     [enflammer]
-   ask patches in-radius intensité-vent with [ pcolor = green - 3.5]
-    [enflammer]
+    vent-enflamme "vent" intensité-vent sens-vent
+    arbre-tombe
   set pcolor gray
   die]
 
@@ -64,9 +72,9 @@ end
 
 to initialise-coupe-feux
 
-  if hauteur-parcelles != 0
+  if largeur-parcelles != 0
   [
-    ask patches with [ pxcor mod hauteur-parcelles = 0 and pycor = min-pycor]
+    ask patches with [ pxcor mod largeur-parcelles = 0 and pycor = min-pycor]
     [
       sprout-coupe-feux 1 [set pcolor brown ]
     ]
@@ -91,9 +99,9 @@ to initialise-coupe-feux
       die
     ]
   ]
-  if largeur-parcelles != 0
+  if hauteur-parcelles != 0
   [
-    ask patches with [ pycor mod largeur-parcelles = 0 and pxcor = min-pxcor]
+    ask patches with [ pycor mod hauteur-parcelles = 0 and pxcor = min-pxcor]
     [
       sprout-coupe-feux 1 [set pcolor brown]
     ]
@@ -173,12 +181,78 @@ to enflammer
     set arbres-brules arbres-brules + 1
   ]
 end
+
+to vent-enflamme [cause portée sens]
+  if cause = "vent"[
+    if portée < 5 [set aleatoire random 20]
+    if portée < 10 and portée >= 5[set aleatoire random 17]
+    if portée < 20 and portée >= 10[set aleatoire random 13]
+    if portée < 30 and portée >= 20[set aleatoire random 10]
+    if portée < 40 and portée >= 30[set aleatoire random 7]
+    if portée >= 40 [set aleatoire random 5]
+
+    if aleatoire < 3 [set longueur largeur-coupe-feu + 2] ;; si le vent est à plus de 40 km/h, il y a un peu moins d'une chance sur 2 que cela traverse les coupe-feu, la proba diminue avec la vitesse du vent qui diminue
+    if aleatoire > 2  [set longueur portée / 2]
+  ]
+
+  if cause = "arbre"[
+    set longueur portée
+  ]
+ if sens = "Nord-Sud"[
+    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pycor <= positiony) ]
+    [enflammer]]
+ if sens = "Sud-Nord"[
+    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pycor >= positiony) ]
+    [enflammer]]
+ if sens = "Est-Ouest"[
+    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pxcor <= positionx) ]
+    [enflammer]]
+ if sens = "Ouest-Est"[
+    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pxcor >= positionx) ]
+    [enflammer]]
+end
+
+to arbre-tombe
+  if random 10 = 0  ;;1chance sur 10 que cela arrive
+  [
+    if intensité-vent <= 5 [
+      set aleatoire random 4
+      if aleatoire = 0[ set tombe "Nord-Sud"]
+      if aleatoire = 1[ set tombe "Sud-Nord"]
+      if aleatoire = 2[ set tombe "Est-Ouest"]
+      if aleatoire = 3[ set tombe "Ouest-Est"]
+    ]
+    if intensité-vent > 5 [
+      if sens-vent = "Nord-Sud"
+      [choix-côté-tombe "Nord-Sud" "Sud-Nord" "Est-Ouest" "Ouest-Est"]
+      if sens-vent = "Sud-Nord"
+      [choix-côté-tombe "Sud-Nord" "Nord-Sud" "Est-Ouest" "Ouest-Est"]
+      if sens-vent = "Est-Ouest"
+      [choix-côté-tombe "Est-Ouest" "Nord-Sud" "Sud-Nord" "Ouest-Est"]
+      if sens-vent = "Ouest-Est"
+      [choix-côté-tombe "Ouest-Est" "Sud-Nord" "Nord-Sud" "Est-Ouest"]
+    ]
+  ]
+    vent-enflamme "arbre" taille-arbre tombe
+
+end
+
+to choix-côté-tombe [vent sens1 sens2 sens3]
+  set aleatoire random 2
+  if aleatoire = 0[set tombe vent]
+  if aleatoire = 1 [
+    set aleatoire random 3
+    if aleatoire = 0 [set tombe sens1]
+    if aleatoire = 1 [set tombe sens2]
+    if aleatoire = 2 [set tombe sens3]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-0
-0
-1210
-1211
+12
+224
+1226
+1439
 -1
 -1
 2.0
@@ -188,26 +262,24 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -300
 300
 -300
 300
-0
-0
 1
 1
 1
 ticks
-30.0
+10.0
 
 BUTTON
-30
-492
-99
-525
+1012
+158
+1081
+191
 setup
 setup
 NIL
@@ -221,10 +293,10 @@ NIL
 1
 
 BUTTON
-121
-491
-184
-524
+1103
+157
+1166
+190
 go
 go
 T
@@ -238,30 +310,30 @@ NIL
 0
 
 SLIDER
-23
-150
-195
-183
+216
+51
+388
+84
 densité
 densité
 0
 100
-70.0
+34.0
 1
 1
 %
 HORIZONTAL
 
 SLIDER
-226
-51
-398
-84
+23
+99
+195
+132
 largeur-rivières
 largeur-rivières
 0
 10
-3.0
+0.0
 1
 1
 m
@@ -269,17 +341,17 @@ HORIZONTAL
 
 SLIDER
 22
-99
+156
 194
-132
+189
 intensité-vent
 intensité-vent
 0
-10
-2.0
+50
+15.0
 1
 1
-NIL
+km/h
 HORIZONTAL
 
 SLIDER
@@ -291,62 +363,62 @@ humidité
 humidité
 0
 100
-63.0
+0.0
 1
 1
 %
 HORIZONTAL
 
 SLIDER
-25
-268
-206
-301
+509
+148
+690
+181
 hauteur-parcelles
 hauteur-parcelles
 20
 150
-101.0
+142.0
 1
 1
-NIL
+m
 HORIZONTAL
 
 SLIDER
-25
-318
-204
-351
+509
+102
+688
+135
 largeur-parcelles
 largeur-parcelles
 20
 150
-74.0
+150.0
 1
 1
-NIL
+m
 HORIZONTAL
 
 SLIDER
-25
-375
-203
-408
+697
+102
+875
+135
 largeur-coupe-feu
 largeur-coupe-feu
 0
-20
-0.0
-2
+40
+30.0
 1
-NIL
+1
+m
 HORIZONTAL
 
 MONITOR
-29
-543
-143
-588
+1246
+73
+1360
+118
 Pourcentage brulé
 (arbres-brules / arbres-initiaux)\n* 100
 1
@@ -364,45 +436,45 @@ Environnement
 1
 
 TEXTBOX
-28
-227
-178
-252
+511
+10
+661
+35
 Parcelles\n
 20
 0.0
 1
 
 TEXTBOX
-30
-449
-180
-474
+998
+10
+1148
+35
 Simulation
 20
 0.0
 1
 
 SLIDER
-225
-152
-397
-185
+216
+102
+388
+135
 foyer-de-feu
 foyer-de-feu
 0
 20
-2.0
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-157
-544
-277
-589
+1374
+74
+1494
+119
 Pourcentage sauvé
 100 - (arbres-brules / arbres-initiaux)\n* 100
 1
@@ -410,10 +482,10 @@ Pourcentage sauvé
 11
 
 PLOT
-298
-469
-704
-659
+1246
+134
+1652
+324
 Taux d'accupation du terrain par les arbres
 NIL
 %
@@ -428,10 +500,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot (count patches with [pcolor = green - 3.5] / count patches) * 100"
 
 SWITCH
-136
-222
-280
-255
+509
+50
+653
+83
 coupes-feux
 coupes-feux
 0
@@ -439,10 +511,10 @@ coupes-feux
 -1000
 
 PLOT
-298
-667
-849
-817
+1246
+330
+1797
+480
 Pertes (en euros) induite par les coupes-feux
 NIL
 euros
@@ -457,10 +529,10 @@ PENS
 "default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "if coupes-feux [plot count patches with [pcolor = brown] * densité / 100 * prix-arbre]"
 
 PLOT
-859
-666
-1320
-816
+1246
+488
+1707
+638
 Pertes (en euros) induite par le feu
 NIL
 NIL
@@ -475,25 +547,25 @@ PENS
 "default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "plot count patches with [pcolor = gray] * prix-arbre"
 
 SLIDER
-28
-607
-200
-640
+1002
+99
+1174
+132
 prix-arbre
 prix-arbre
 1
 100
-2.0
+100.0
 1
 1
 euros
 HORIZONTAL
 
 PLOT
-300
-859
-1040
-1009
+1248
+645
+1988
+795
 Valeur totale de la parcelle (en euros)
 NIL
 euros
@@ -506,6 +578,31 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "set-plot-y-range 0 prix-arbre * count patches" "plot count patches with [pcolor = green - 3.5] * prix-arbre"
+
+CHOOSER
+230
+149
+368
+194
+sens-vent
+sens-vent
+"Nord-Sud" "Sud-Nord" "Est-Ouest" "Ouest-Est"
+0
+
+SLIDER
+1001
+51
+1173
+84
+taille-arbre
+taille-arbre
+0
+30
+30.0
+2
+1
+mètres
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -849,7 +946,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 3D 6.1.1
+NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
