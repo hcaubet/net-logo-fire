@@ -1,17 +1,14 @@
 globals [
   arbres-initiaux    ;; avec combien d'arbres nous commençons (arbres verts)
   arbres-brules    ;; combien d'arbres ont brulés
-   positionx
-  positiony
-  tombe
-  aleatoire
-  longueur
-
+  positionx ;; permet de retenir la coordonnée x d'un feu
+  positiony ;; permet de retenir la coordonnée y d'un feu
+  tombe ;; de quel côté un arbre va tomber
+  aleatoire ;; nombres aléatoires
 ]
 
 ;;définition des tortues
 breed [feux feu]    ;; tortues rouges: le feu qui se répend
-breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
 breed [eaux eau] ;; tortues bleues: l'eau
 breed [coupe-feux coupe-feu]
 
@@ -36,14 +33,16 @@ to setup
   reset-ticks  ;;on met l'horloge à 0
 end
 
+;;procédure qui colore les patches en vert pour représenter les arbres
 to initialise-arbres
   ask patches with [(random-float 100) < densité]
-    [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau
+    [ if pcolor != blue and pcolor != brown;;on ne met pas d'arbre lorsqu'il y a de l'eau ou un coupe-feu
       [set pcolor green - 3.5
       ]
   ]
 end
 
+;;procédure qui créé les turtles feux là où il y a un départ de feux (localisation aléatoire)
 to initialise-feux
   let i 0
   while [i < foyer-de-feu]
@@ -57,6 +56,7 @@ to initialise-feux
   ]
 end
 
+;;procédure qui permet de représenter les coupe-feux
 to initialise-coupe-feux
 
   if largeur-parcelles != 0
@@ -113,47 +113,50 @@ to initialise-coupe-feux
   ]
 end
 
+;;procédure qui créé la rivière
 to initialise-rivieres
-  ask n-of 1 patches
+  if largeur-rivières != 0 [
+    ask n-of 1 patches
     [ sprout-eaux 1 [set pcolor blue]]
 
-  let i 0
-  while [ i < (max-pycor)]
+    let i 0
+    while [ i < (max-pycor)]
     [
       ask eaux
       [
         ifelse not can-move? 1 [die]
-      [
-        fd 1
-        set pcolor blue
-        ifelse (i mod 4  = 0)
-        [
-          let angle-min random 60
-          set angle-min angle-min * -1
-          let angle-max random 60
-          ifelse (random 100) < 50
-          [
-            rt angle-min
-          ]
-          [
-            rt angle-max
-          ]
-          fd 1
-        ]
         [
           fd 1
           set pcolor blue
-          fd 1
-        ]
-        let radius random largeur-rivières
-        set radius radius + 1
-        ask patches in-radius radius
-        [
-          set pcolor blue
+          ifelse (i mod 4  = 0)
+          [
+            let angle-min random 60
+            set angle-min angle-min * -1
+            let angle-max random 60
+            ifelse (random 100) < 50
+            [
+              rt angle-min
+            ]
+            [
+              rt angle-max
+            ]
+            fd 1
+          ]
+          [
+            fd 1
+            set pcolor blue
+            fd 1
+          ]
+          let radius random largeur-rivières
+          set radius radius + 1
+          ask patches in-radius radius
+          [
+            set pcolor blue
+          ]
         ]
       ]
+      set i i + 1
     ]
-    set i i + 1
   ]
 end
 
@@ -171,9 +174,10 @@ to go
     ;; un arbre qui tombe propage le feu plus loin selon sa taille :
       arbre-tombe
       die]
-  tick
+  tick ;; on avance l'horloge d'un.
 end
 
+;;procédure qui permet de créer un turtle feu sur un arbre qui se fait enflammer
 to enflammer
   if random 100 > humidité
   [
@@ -184,9 +188,12 @@ to enflammer
   ]
 end
 
+;;procédure qui réalise la propagation du feu de forêt avec l'effet du vent. Arguments: l'intensité du vent et son orientation
 to vent-enflamme [portée sens]
   if portée != 0 [
-    let l intensité-vent / 3
+    let l intensité-vent / 3 ;;on décide que le vent propage le feux à ue distance en mètres égale à son intensité divisé par 3.
+
+   ;; tous les arbres dans le rayon l de l'arbre enflammé d'origine prennent feu (dansle sens dans lequel le vent souffle)
     if sens-vent = "Nord-Sud"[
       ask patches in-radius l with [ (pcolor = green - 3.5) and (pycor <= positiony) ]
       [enflammer]]
@@ -203,17 +210,18 @@ to vent-enflamme [portée sens]
   ]
 end
 
+;;procédure qui réalise la propagation du feu de forêt avec l'effet d'un arbre qui tombe suite à son embrasement
 to arbre-tombe
-  if random 1000 = 0  ;;1chance sur 1000 que cela arrive
+  if random 1000 = 0  ;;1 risque sur 1000 que cela arrive
   [
-    if intensité-vent <= 5 [
+    if intensité-vent <= 5 [    ;; si l'intensité du vent est faible on considère que cela n'a pas d'incidence sur le côté duquel tombe l'arbre
       set aleatoire random 4
       if aleatoire = 0[ set tombe "Nord-Sud"]
       if aleatoire = 1[ set tombe "Sud-Nord"]
       if aleatoire = 2[ set tombe "Est-Ouest"]
       if aleatoire = 3[ set tombe "Ouest-Est"]
     ]
-    if intensité-vent > 5 [
+    if intensité-vent > 5 [       ;; On considère que si le vent souffle à plus de 5 km/h, son sens a une incidence sur le côté duquel tombe l'arbre
       if sens-vent = "Nord-Sud"
       [choix-côté-tombe "Nord-Sud" "Sud-Nord" "Est-Ouest" "Ouest-Est"]
       if sens-vent = "Sud-Nord"
@@ -223,17 +231,17 @@ to arbre-tombe
       if sens-vent = "Ouest-Est"
       [choix-côté-tombe "Ouest-Est" "Sud-Nord" "Nord-Sud" "Est-Ouest"]
     ]
-    arbre-enflamme taille-arbre tombe
+    arbre-enflamme taille-arbre tombe  ;;on appelle la procédure qui permet d'embraser ce que l'arbre touche en tombant. taille-arbre=portée, tombe = sens
   ]
 
 
 end
 
-
+;; Procédure qui permet de dire de quel côté tombe un arbre. Arguments: le sens du vent qui souffle, puis les autres sens dans lesquels le vent ne souffle pas au cours de la simulation
 to choix-côté-tombe [vent sens1 sens2 sens3]
   set aleatoire random 2
-  if aleatoire = 0[set tombe vent]
-  if aleatoire = 1 [
+  if aleatoire = 0[set tombe vent]     ;;l'arbre a 1 chance sur 2 de tomber dans le sens dans lequel le vent souffle
+  if aleatoire = 1 [                   ;; sinon il a autant de chance de tomber dans un des 3 sens restants.
     set aleatoire random 3
     if aleatoire = 0 [set tombe sens1]
     if aleatoire = 1 [set tombe sens2]
@@ -241,29 +249,33 @@ to choix-côté-tombe [vent sens1 sens2 sens3]
   ]
 end
 
+;; Procédure qui réalise la propagation du feu de forêt avec l'effet d'un arbre qui tombe. Arguments: la taille de l'arbre et le côté où il tombe
 to arbre-enflamme [portée sens]
- if portée != 0 [
+ let longueur 0
+  if portée != 0 [
    set longueur portée
     if sens = "Nord-Sud"
   [
     let i 1
-    while [ i < longueur ]
+    while [ i < longueur ]  ;;cette boucle permet de passer en gris tous les arbres touchés par l'arbre qui tombe (en ligne droite)
     [
     ask patches with [ (pcolor = green - 3.5) and pxcor = positionx and pycor = positiony - i]
-       [set pcolor gray ]
+       [set pcolor gray  set arbres-brules arbres-brules + 1]
       set i i + 1
     ]
       if i = longueur[
         ask patches with [ (pcolor = green - 3.5) and pxcor = positionx and pycor = positiony - i]
         [ enflammer]
+        ;; le dernier arbre touché s'enflamme et peut donc continuer à propager le feu.
       ]
   ]
+    ;; la même chose est réalisée quelque soit le sens dans lequel est tombé l'arbre
  if sens = "Sud-Nord"[
     let i 1
     while [ i < longueur ]
     [
      ask patches with [(pcolor = green - 3.5) and pxcor = positionx and pycor = positiony + i]
-      [set pcolor gray]
+      [set pcolor gray  set arbres-brules arbres-brules + 1]
       set i i + 1
     ]
       if i = longueur[
@@ -276,7 +288,7 @@ to arbre-enflamme [portée sens]
     while [ i < longueur ]
     [
     ask patches with [(pcolor = green - 3.5) and pxcor = positionx - i and pycor = positiony]
-      [set pcolor gray ]
+      [set pcolor gray  set arbres-brules arbres-brules + 1]
       set i i + 1
     ]
       if i = longueur[
@@ -289,7 +301,7 @@ to arbre-enflamme [portée sens]
     while [ i < longueur ]
     [
     ask patches with [(pcolor = green - 3.5) and pxcor = positionx + i and pycor = positiony]
-      [set pcolor gray]
+      [set pcolor gray  set arbres-brules arbres-brules + 1]
         set i i + 1
     ]
 
@@ -304,11 +316,11 @@ end
 GRAPHICS-WINDOW
 12
 224
-1222
-1435
+621
+834
 -1
 -1
-2.0
+1.0
 1
 10
 1
@@ -371,7 +383,7 @@ densité
 densité
 0
 100
-65.0
+75.0
 1
 1
 %
@@ -386,7 +398,7 @@ largeur-rivières
 largeur-rivières
 0
 10
-2.0
+0.0
 1
 1
 m
@@ -401,7 +413,7 @@ intensité-vent
 intensité-vent
 0
 50
-8.0
+50.0
 1
 1
 km/h
@@ -416,7 +428,7 @@ humidité
 humidité
 0
 100
-50.0
+0.0
 1
 1
 %
@@ -461,7 +473,7 @@ largeur-coupe-feu
 largeur-coupe-feu
 0
 40
-3.0
+2.0
 1
 1
 m
@@ -559,7 +571,7 @@ SWITCH
 83
 coupes-feux
 coupes-feux
-0
+1
 1
 -1000
 
@@ -651,8 +663,8 @@ taille-arbre
 taille-arbre
 0
 30
-24.0
-2
+30.0
+1
 1
 mètres
 HORIZONTAL
