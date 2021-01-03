@@ -15,6 +15,7 @@ breed [cendres cendre] ;;tortues rouge sombre: les arbres brulés
 breed [eaux eau] ;; tortues bleues: l'eau
 breed [coupe-feux coupe-feu]
 
+;;Initialisation
 to setup
   clear-all
   set-default-shape turtles "tree"
@@ -33,20 +34,6 @@ to setup
   set arbres-brules 0 ;; on initialise arbres-brules à 0
 
   reset-ticks  ;;on met l'horloge à 0
-end
-
-to go
- ask feux
-   [set positionx pxcor
-    set positiony pycor
-    ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
-    [enflammer]
-    vent-enflamme "vent" intensité-vent sens-vent
-    arbre-tombe
-  set pcolor gray
-  die]
-
-  tick
 end
 
 to initialise-arbres
@@ -170,50 +157,54 @@ to initialise-rivieres
   ]
 end
 
+;; Lancement du programme
+to go
+ ask feux
+   [
+    set positionx pxcor ;;on enregistre la position du feu
+    set positiony pycor
+    ask neighbors4 with [ pcolor = green - 3.5] ;;regarde les 4 voisins de l'arbre en feu et si ce sont des arbre, on les enflamme
+    [enflammer]
 
+    ;;le vent propage le feu un peu plus loin selon son intensité :
+    vent-enflamme intensité-vent sens-vent
+    ;; un arbre qui tombe propage le feu plus loin selon sa taille :
+      arbre-tombe
+      die]
+  tick
+end
 
 to enflammer
   if random 100 > humidité
   [
     sprout-feux 1
     [ set color red ]
-    set pcolor black
+    set pcolor gray
     set arbres-brules arbres-brules + 1
   ]
 end
 
-to vent-enflamme [cause portée sens]
-  if cause = "vent"[
-    if portée < 5 [set aleatoire random 20]
-    if portée < 10 and portée >= 5[set aleatoire random 17]
-    if portée < 20 and portée >= 10[set aleatoire random 13]
-    if portée < 30 and portée >= 20[set aleatoire random 10]
-    if portée < 40 and portée >= 30[set aleatoire random 7]
-    if portée >= 40 [set aleatoire random 5]
+to vent-enflamme [portée sens]
+  if portée != 0 [
+    let l intensité-vent / 3
+    if sens-vent = "Nord-Sud"[
+      ask patches in-radius l with [ (pcolor = green - 3.5) and (pycor <= positiony) ]
+      [enflammer]]
 
-    if aleatoire < 3 [set longueur largeur-coupe-feu + 2] ;; si le vent est à plus de 40 km/h, il y a un peu moins d'une chance sur 2 que cela traverse les coupe-feu, la proba diminue avec la vitesse du vent qui diminue
-    if aleatoire > 2  [set longueur portée / 2]
+    if sens-vent = "Sud-Nord"[
+      ask patches in-radius l with [ (pcolor = green - 3.5) and (pycor >= positiony) ]
+      [enflammer]]
+    if sens-vent = "Est-Ouest"[
+      ask patches in-radius l with [ (pcolor = green - 3.5) and (pxcor <= positionx) ]
+      [enflammer]]
+    if sens-vent = "Ouest-Est"[
+      ask patches in-radius l with [ (pcolor = green - 3.5) and (pxcor >= positionx) ]
+      [enflammer]]
   ]
-
-  if cause = "arbre"[
-    set longueur portée
-  ]
- if sens = "Nord-Sud"[
-    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pycor <= positiony) ]
-    [enflammer]]
- if sens = "Sud-Nord"[
-    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pycor >= positiony) ]
-    [enflammer]]
- if sens = "Est-Ouest"[
-    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pxcor <= positionx) ]
-    [enflammer]]
- if sens = "Ouest-Est"[
-    ask patches in-radius longueur with [ (pcolor = green - 3.5) and (pxcor >= positionx) ]
-    [enflammer]]
 end
 
 to arbre-tombe
-  if random 10 = 0  ;;1chance sur 10 que cela arrive
+  if random 1000 = 0  ;;1chance sur 1000 que cela arrive
   [
     if intensité-vent <= 5 [
       set aleatoire random 4
@@ -232,10 +223,12 @@ to arbre-tombe
       if sens-vent = "Ouest-Est"
       [choix-côté-tombe "Ouest-Est" "Sud-Nord" "Nord-Sud" "Est-Ouest"]
     ]
+    arbre-enflamme taille-arbre tombe
   ]
-    vent-enflamme "arbre" taille-arbre tombe
+
 
 end
+
 
 to choix-côté-tombe [vent sens1 sens2 sens3]
   set aleatoire random 2
@@ -247,12 +240,72 @@ to choix-côté-tombe [vent sens1 sens2 sens3]
     if aleatoire = 2 [set tombe sens3]
   ]
 end
+
+to arbre-enflamme [portée sens]
+ if portée != 0 [
+   set longueur portée
+    if sens = "Nord-Sud"
+  [
+    let i 1
+    while [ i < longueur ]
+    [
+    ask patches with [ (pcolor = green - 3.5) and pxcor = positionx and pycor = positiony - i]
+       [set pcolor gray ]
+      set i i + 1
+    ]
+      if i = longueur[
+        ask patches with [ (pcolor = green - 3.5) and pxcor = positionx and pycor = positiony - i]
+        [ enflammer]
+      ]
+  ]
+ if sens = "Sud-Nord"[
+    let i 1
+    while [ i < longueur ]
+    [
+     ask patches with [(pcolor = green - 3.5) and pxcor = positionx and pycor = positiony + i]
+      [set pcolor gray]
+      set i i + 1
+    ]
+      if i = longueur[
+        ask patches with [(pcolor = green - 3.5) and pxcor = positionx and pycor = positiony + i]
+        [ enflammer]
+      ]
+  ]
+ if sens = "Est-Ouest"[
+    let i 1
+    while [ i < longueur ]
+    [
+    ask patches with [(pcolor = green - 3.5) and pxcor = positionx - i and pycor = positiony]
+      [set pcolor gray ]
+      set i i + 1
+    ]
+      if i = longueur[
+        ask patches with [(pcolor = green - 3.5) and pxcor = positionx - i and pycor = positiony]
+        [ enflammer]
+      ]
+  ]
+ if sens = "Ouest-Est"[
+    let i 1
+    while [ i < longueur ]
+    [
+    ask patches with [(pcolor = green - 3.5) and pxcor = positionx + i and pycor = positiony]
+      [set pcolor gray]
+        set i i + 1
+    ]
+
+      if i = longueur[
+        ask patches with [(pcolor = green - 3.5) and pxcor = positionx + i and pycor = positiony]
+        [ enflammer]
+      ]
+  ]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 12
 224
-1226
-1439
+1222
+1435
 -1
 -1
 2.0
@@ -273,7 +326,7 @@ GRAPHICS-WINDOW
 1
 1
 ticks
-10.0
+30.0
 
 BUTTON
 1012
@@ -318,7 +371,7 @@ densité
 densité
 0
 100
-34.0
+65.0
 1
 1
 %
@@ -333,7 +386,7 @@ largeur-rivières
 largeur-rivières
 0
 10
-0.0
+2.0
 1
 1
 m
@@ -348,7 +401,7 @@ intensité-vent
 intensité-vent
 0
 50
-15.0
+8.0
 1
 1
 km/h
@@ -363,7 +416,7 @@ humidité
 humidité
 0
 100
-0.0
+50.0
 1
 1
 %
@@ -378,7 +431,7 @@ hauteur-parcelles
 hauteur-parcelles
 20
 150
-142.0
+100.0
 1
 1
 m
@@ -393,7 +446,7 @@ largeur-parcelles
 largeur-parcelles
 20
 150
-150.0
+100.0
 1
 1
 m
@@ -408,7 +461,7 @@ largeur-coupe-feu
 largeur-coupe-feu
 0
 40
-30.0
+3.0
 1
 1
 m
@@ -587,7 +640,7 @@ CHOOSER
 sens-vent
 sens-vent
 "Nord-Sud" "Sud-Nord" "Est-Ouest" "Ouest-Est"
-0
+2
 
 SLIDER
 1001
@@ -598,7 +651,7 @@ taille-arbre
 taille-arbre
 0
 30
-30.0
+24.0
 2
 1
 mètres
